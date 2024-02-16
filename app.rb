@@ -29,7 +29,7 @@ post '/produce/?:count?' do
   delivery_handles = []
 
   producer = KAFKA.producer
-  prefix = "[#{rand(1000)}]"
+  prefix = "[" + (params[:prefix] || rand(1000).to_s) + "]"
   stream do |out|
     count.times do |i|
       out.puts "producing #{prefix} #{i}"
@@ -55,7 +55,7 @@ post '/consume/?:count?' do |count|
   stream do |out|
     consumer.each do |message|
       consumed_count += 1
-      out.puts "##{consumed_count}: #{message}"
+      out.puts "##{consumed_count}: #{message.key}: #{message.payload}"
       out.flush
       break if count > 0 && consumed_count >= count
     end
