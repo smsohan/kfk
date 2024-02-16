@@ -30,13 +30,8 @@ $ curl http://localhost:8080/produce -XPOST
 
 ## Deploy to GCP
 ```bash
-# Build the image
-$ docker build . -t <your repo> #//e.g. us-central1-docker.pkg.dev/<your project>/kfk/app
-$ docker push <your repo>
-# Make changes to the [terraform/main.tf](terraform/main.tf) file to select the appropriate image, project / regions, etc.
-$ cd terraform
-# will deploy a GCE VM with Kafka and a Cloud Run service
-$ terraform apply
+# Build and deploy
+$ ./deploy.sh
 # will allow you to access the Cloud Run service locally
 $ gcloud run proxy kfk --region us-central-1
 # Now you can all the endpoints as your dev environment

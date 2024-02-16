@@ -1,5 +1,5 @@
 variable "image" {
-    default = "us-central1-docker.pkg.dev/sohansm-project/kfk/app@sha256:4133fa282e42852c98d7c84f3d1891ada632b3915e57c057ae015f9c164d6da9"
+    default = "us-central1-docker.pkg.dev/sohansm-project/kfk/app@sha256:390077031eb2989dd0c11136fefdaef8bbbc4830596a62f3313ba9da481bc336"
 }
 variable "project" {
   default = "sohansm-project"
