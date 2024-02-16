@@ -1,7 +1,9 @@
 variable "project" {
   default = "sohansm-project"
 }
-
+variable "image" {
+    default = "us-central1-docker.pkg.dev/sohansm-project/kfk/app@sha256:c757977337f366128638aa15874a80b50808051db46d3901caaa67e739bfaa46"
+}
 variable "zone" {
     default = "us-central1-a"
 }
@@ -13,16 +15,11 @@ variable "app_name" {
     default = "kfk"
 }
 
-variable "image" {
-    default = "us-central1-docker.pkg.dev/sohansm-project/kfk/app@sha256:fdb393fe2ec91d2bee0349d46b724143bf372e26d26aff39a91522ed8c3063b8"
-}
-
 # Provider setup
 provider "google" {
   project = var.project
   region  = var.region
 }
-
 
 resource "google_compute_network" "vpc" {
   name = "${var.app_name}-vpc"

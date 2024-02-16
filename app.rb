@@ -16,11 +16,12 @@ get '/' do
 end
 
 KAFKA_CONFIG = {
-    :"bootstrap.servers" => ENV['KAFKA_BOOTSTRAP_SERVERS'],
-    :"group.id" => "consumer-group"
+  :"bootstrap.servers" => ENV['KAFKA_BOOTSTRAP_SERVERS']
 }
+KAFKA_CONSUMER_CONFIG = KAFKA_CONFIG.merge(:"group.id" => "consumer-group")
 
 KAFKA = Rdkafka::Config.new(KAFKA_CONFIG)
+KAFKA_CONSUMER = Rdkafka::Config.new(KAFKA_CONSUMER_CONFIG)
 
 post '/produce/?:count?' do
   count = params[:count].to_i
@@ -28,35 +29,39 @@ post '/produce/?:count?' do
   delivery_handles = []
 
   producer = KAFKA.producer
-  count.times do |i|
-    puts "Producing message #{i}"
-    delivery_handles << producer.produce(
+  prefix = "[#{rand(1000)}]"
+  stream do |out|
+    count.times do |i|
+      out.puts "producing #{prefix} #{i}"
+      delivery_handles << producer.produce(
         topic:  ENV['KAFKA_TOPIC'],
         payload: "Payload #{i}",
-        key:     "Key #{i}"
-    )
+        key:     "#{prefix} #{i}"
+      )
+      out.flush
+    end
+    delivery_handles.each(&:wait)
+    producer.close
   end
 
-  delivery_handles.each(&:wait)
-  producer.close
-  {count: count}.to_json
 end
 
 post '/consume/?:count?' do |count|
-  consumer = KAFKA.consumer
+  consumer = KAFKA_CONSUMER.consumer
   consumer.subscribe(ENV['KAFKA_TOPIC'])
   count = params[:count].to_i
 
   consumed_count = 0
-  consumer.each do |message|
-    puts "Message received: #{message}"
-    consumed_count += 1
-    puts "consumed count = #{consumed_count}"
-    break if count > 0 && consumed_count >= count
-  end
+  stream do |out|
+    consumer.each do |message|
+      consumed_count += 1
+      out.puts "##{consumed_count}: #{message}"
+      out.flush
+      break if count > 0 && consumed_count >= count
+    end
 
-  consumer.commit
-  consumer.close
-  {count: consumed_count}.to_json
+    consumer.commit
+    consumer.close
+  end
 
 end
