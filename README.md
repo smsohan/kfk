@@ -1,3 +1,8 @@
+# Introduction
+
+This is a demo `produce` and `consume` app for `Apache Kafka`. Both the app and Kafka run on containers,
+for local dev using `docker-compos`, and deploy to Google Cloud Platform using `Terraform`.
+
 ## Local Development
 
 Install `docker-compose` and you're all set.
