@@ -175,9 +175,11 @@ resource "google_cloud_run_v2_service" "cloud_run" {
   provider = google-beta
   launch_stage = "BETA"
   project = var.project
+
   template {
     service_account = google_service_account.my_service_account.email
     execution_environment = "EXECUTION_ENVIRONMENT_GEN2"
+
     containers {
       name = var.app_name
       image = var.image
@@ -186,6 +188,7 @@ resource "google_cloud_run_v2_service" "cloud_run" {
           cpu = "1000m"
           memory = "512Mi"
         }
+        cpu_idle = false
       }
 
       env {
@@ -203,6 +206,11 @@ resource "google_cloud_run_v2_service" "cloud_run" {
         value = "test-topic"
       }
 
+    }
+
+    scaling {
+      min_instance_count = 1
+      max_instance_count = 1
     }
 
     vpc_access{
