@@ -63,5 +63,14 @@ post '/consume/?:count?' do |count|
     consumer.commit
     consumer.close
   end
+end
 
+get '/lag' do
+  consumer = KAFKA_CONSUMER.consumer
+  partition_count = KAFKA.producer.partition_count(ENV['KAFKA_TOPIC'])
+  list = consumer.committed(Rdkafka::Consumer::TopicPartitionList.new.tap do |x|
+    x.add_topic(ENV['KAFKA_TOPIC'], partition_count)
+  end)
+  lag = consumer.lag(list)
+  {partitions: partition_count, lag: lag}.to_json
 end
