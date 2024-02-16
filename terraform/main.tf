@@ -13,6 +13,10 @@ variable "app_name" {
     default = "kfk"
 }
 
+variable "image" {
+    default = "us-central1-docker.pkg.dev/sohansm-project/kfk/app@sha256:fdb393fe2ec91d2bee0349d46b724143bf372e26d26aff39a91522ed8c3063b8"
+}
+
 # Provider setup
 provider "google" {
   project = var.project
@@ -64,6 +68,20 @@ resource "google_project_iam_member" "editor_for_sa" {
   member  = "serviceAccount:${google_service_account.my_service_account.email}"
 }
 
+locals {
+     env = [
+        {name = "KAFKA_CFG_NODE_ID", value = "0"},
+        {name = "KAFKA_CFG_PROCESS_ROLES", value = "controller,broker"},
+        {name = "KAFKA_CFG_LISTENERS", value = "PLAINTEXT://:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094"},
+        {name = "KAFKA_CFG_ADVERTISED_LISTENERS", value="PLAINTEXT://kafka:9092,EXTERNAL://:9094"},
+        {name = "KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP", value = "CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT"},
+        {name = "KAFKA_CFG_CONTROLLER_QUORUM_VOTERS", value = "0@localhost:9093"},
+        {name = "KAFKA_CFG_CONTROLLER_LISTENER_NAMES", value = "CONTROLLER"},
+        {name = "KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE", value = "true"},
+    ]
+
+    env_sha = sha1("${join("", local.env.*.value)}")
+}
 module "gce-container" {
   source  = "terraform-google-modules/container-vm/google"
   version = "~> 3.0"
@@ -73,16 +91,7 @@ module "gce-container" {
   container = {
     image = "bitnami/kafka:latest"
 
-    env = [
-        {name = "KAFKA_CFG_NODE_ID", value = "0"},
-        {name = "KAFKA_CFG_PROCESS_ROLES", value = "controller,broker"},
-        {name = "KAFKA_CFG_LISTENERS", value = "PLAINTEXT://:9092,CONTROLLER://:9093"},
-        {name = "KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP", value = "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"},
-        {name = "KAFKA_CFG_CONTROLLER_QUORUM_VOTERS", value = "0@kafka:9093"},
-        {name = "KAFKA_CFG_CONTROLLER_LISTENER_NAMES", value = "CONTROLLER"},
-        {name = "KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE", value = "true"}
-    ]
-
+    env = local.env
     volumeMounts = [
       {
         mountPath = "/cache"
@@ -141,4 +150,74 @@ resource "google_compute_instance" "vm" {
       "https://www.googleapis.com/auth/cloud-platform",
     ]
   }
+
+
+}
+# hack to restart the container when the env changes
+resource "null_resource" "gce_null_instance" {
+  triggers = {
+    config_sha = local.env_sha
+  }
+
+  provisioner "local-exec" {
+    command = "gcloud compute ssh --project=${var.project} --zone=${var.zone} ${google_compute_instance.vm.name} --command 'sudo systemctl start konlet-startup'"
+  }
+
+  depends_on = [
+    google_compute_instance.vm
+  ]
+}
+
+
+resource "google_cloud_run_v2_service" "cloud_run" {
+  name = var.app_name
+  location = var.region
+  provider = google-beta
+  launch_stage = "BETA"
+  project = var.project
+  template {
+    service_account = google_service_account.my_service_account.email
+    execution_environment = "EXECUTION_ENVIRONMENT_GEN2"
+    containers {
+      name = var.app_name
+      image = var.image
+      resources {
+        limits = {
+          cpu = "1000m"
+          memory = "512Mi"
+        }
+      }
+
+      env {
+        name = "APP_ENV"
+        value = "production"
+      }
+
+      env {
+        name = "KAFKA_BOOTSTRAP_SERVERS"
+        value = "${google_compute_instance.vm.network_interface.0.network_ip}:9094"
+      }
+
+      env {
+        name = "KAFKA_TOPIC"
+        value = "test-topic"
+      }
+
+    }
+
+    vpc_access{
+      network_interfaces {
+        network = google_compute_network.vpc.name
+        subnetwork = google_compute_subnetwork.subnet.name
+      }
+      egress = "PRIVATE_RANGES_ONLY"
+    }
+
+  }
+
+  traffic {
+    percent         = 100
+     type = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+  }
+
 }
