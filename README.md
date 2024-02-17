@@ -10,7 +10,7 @@ We have three distinct containers as follows:
 2. The `consumer` container - is an always-on consumer listening to messages on a topic.
 3. The `app` container - that exposes a HTTP API to publish some messages
 
-Locally, all three containers run on docker-compose. In GCP, the Kafka container runs on Google Compute Engine. The app and consumer run as a part of the same Cloud Run app. The app satisfies the Cloud Run service contract by listening to port 8080 to serve HTTP traffic. The consumer runs as a side-car, listening to the Kafka topic on the background. The Cloud Run app is set to use min and max instance of 1 with `cpu_idle` set to false. This makes the Cloud Run multi-container app always running.
+Locally, all three containers run on docker-compose. In GCP, the Kafka container runs on Google Compute Engine. The app and consumer run as a part of the same Cloud Run app. The app satisfies the Cloud Run service contract by listening to port 8080 to serve HTTP traffic. The consumer runs as a side-car, listening to the Kafka topic on the background. The Cloud Run app is set to use min and max instance of 1 with `cpu_idle` set to false. This keeps the Cloud Run multi-container app running.
 
 You can disable the consumer app locally, and use the `/consume` HTTP endpoints to consume messages. This can be useful to understand how `/lag` works. The `consumer` app adds an aritifical `sleep` to mimic some processing time for each message.
 
