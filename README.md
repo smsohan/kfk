@@ -1,9 +1,18 @@
 # Introduction
 
 This is a demo `produce` and `consume` app for `Apache Kafka`. Both the app and Kafka run on containers,
-for local dev using `docker-compos`, and deploy to Google Cloud Platform using `Terraform`.
+for local dev using `docker-compose`, and deploy to Google Cloud Platform using `Terraform`.
 
 ![Screenshot](screenshot.png)
+
+We have three distinct containers as follows:
+1. The `kafka` container - is the Kafka server.
+2. The `consumer` container - is an always-on consumer listening to messages on a topic.
+3. The `app` container - that exposes a HTTP API to publish some messages
+
+Locally, all three containers run on docker-compose. In GCP, the Kafka container runs on Google Compute Engine. The app and consumer run as a part of the same Cloud Run app. The app satisfies the Cloud Run service contract by listening to port 8080 to serve HTTP traffic. The consumer runs as a side-car, listening to the Kafka topic on the background. The Cloud Run app is set to use min and max instance of 1 with `cpu_idle` set to false. This makes the Cloud Run multi-container app always running.
+
+You can disable the consumer app locally, and use the `/consume` HTTP endpoints to consume messages. This can be useful to understand how `/lag` works. The `consumer` app adds an aritifical `sleep` to mimic some processing time for each message.
 
 ## Local Development
 
@@ -14,17 +23,15 @@ Install `docker-compose` and you're all set.
 $ docker-compose up -d
 # Shell into the app container
 $ docker-compose exec app bash
-# Run the server. It auto reloads on code change
-$ ./run.sh
 # Call the API endpoints from your host, outside the docker shell
 $ curl http://localhost:8080
-# consume the messages
-$ curl http://localhost:8080/consume/10 -XPOST
-# produce 10 messages
+# See the number of unread messages in the topic
+$ curl http://localhost:8080/lag
+# Produce 10 messages
 $ curl http://localhost:8080/produce/10 -XPOST
-# produce 10 messages with a prefix
+# Produce 10 messages with a prefix
 $ curl http://localhost:8080/produce/10?prefix=GAGA -XPOST
-# produce 1_000 messages, by default
+# Produce 1_000 messages, by default
 $ curl http://localhost:8080/produce -XPOST
 ```
 
