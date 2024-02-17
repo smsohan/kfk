@@ -12,6 +12,7 @@ get '/' do
     %{
         POST /produce[/count] to emit #count messages to the queue, default 1,000
         POST /consume[/count] to receive #count messages to the queue, default is all
+        GET /lag to get the number of messages in the topic not consumed yet
     }
 end
 
@@ -72,5 +73,6 @@ get '/lag' do
     x.add_topic(ENV['KAFKA_TOPIC'], partition_count)
   end)
   lag = consumer.lag(list)
+  consumer.close
   {partitions: partition_count, lag: lag}.to_json
 end

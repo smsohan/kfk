@@ -37,6 +37,35 @@ resource "google_cloud_run_v2_service" "cloud_run" {
 
     }
 
+    containers {
+      name = "consumer"
+      image = var.consumer_image
+      depends_on = [var.app_name]
+      resources {
+        limits = {
+          cpu = "1000m"
+          memory = "512Mi"
+        }
+        cpu_idle = false
+      }
+
+      env {
+        name = "KAFKA_BOOTSTRAP_SERVERS"
+        value = "${google_compute_instance.vm.network_interface.0.network_ip}:9094"
+      }
+
+      env {
+        name = "KAFKA_TOPIC"
+        value = "test-topic"
+      }
+
+      env {
+        name = "DELAY_IN_SECONDS" # mimic a consumer processing each message for X seconds
+        value = "0.25"
+      }
+
+    }
+
     scaling {
       min_instance_count = 1
       max_instance_count = 1

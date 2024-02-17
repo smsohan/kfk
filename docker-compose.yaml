@@ -19,6 +19,7 @@ services:
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_CREATE_TOPICS=test-topic:1:1
   app:
     build: "./app"
     ports:
@@ -29,8 +30,26 @@ services:
       - KAFKA_TOPIC=test-topic
     volumes:
       - ./app:/usr/src/app/
-    entrypoint: "tail -f /dev/null" # this makes it easy to reload the dev server without killing the container
+    entrypoint:
+      - ./run.sh
     networks:
       - app-tier
     links:
       - "kafka"
+    tty: true
+
+  consumer:
+    build: "./consumer"
+    environment:
+      - APP_ENV=development
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=test-topic
+    volumes:
+      - ./consumer:/usr/src/app/
+    entrypoint: "bundle exec rerun main.rb"
+    networks:
+      - app-tier
+    links:
+      - "kafka"
+    tty: true
+
