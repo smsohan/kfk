@@ -30,8 +30,7 @@ services:
       - KAFKA_TOPIC=test-topic
     volumes:
       - ./app:/usr/src/app/
-    entrypoint:
-      - ./run.sh
+    entrypoint: "bundle exec rerun app.rb"
     networks:
       - app-tier
     links:
