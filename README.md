@@ -49,12 +49,14 @@ $ curl http://localhost:8080/...
 
 ```mermaid
 sequenceDiagram
-    participant User
+    actor User
     participant Cloud Run Service
-    participant Kafka (GCE)
+    participant Kafka
+    Note over Kafka: bitnami/docker container on GCE
     participant Cloud Run Consumer Sidecar
     User ->> Cloud Run Service: POST /produce/100
-    Cloud Run Service ->> Kafka (GCE): produce 100 messages
-    Cloud Run Consumer Sidecar ->> Kafka (GCE): consume messages
+    Cloud Run Service ->> Kafka: produce 100 messages
+    Cloud Run Consumer Sidecar ->> Kafka: consume messages
+    Note over Cloud Run Consumer Sidecar,Kafka: Always running
     User ->> Cloud Run Service: GET /lag : See the consumer lag
 ```
