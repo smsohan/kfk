@@ -44,3 +44,17 @@ $ gcloud run proxy kfk --region us-central-1
 # Now you can all the endpoints as your dev environment
 $ curl http://localhost:8080/...
 ```
+
+## Architecture on GCP
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Cloud Run Service
+    participant Kafka (GCE)
+    participant Cloud Run Consumer Sidecar
+    User ->> Cloud Run Service: POST /produce/100
+    Cloud Run Service ->> Kafka (GCE): produce 100 messages
+    Cloud Run Consumer Sidecar ->> Kafka (GCE): consume messages
+    User ->> Cloud Run Service: GET /lag : See the consumer lag
+```
