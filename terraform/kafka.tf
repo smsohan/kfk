@@ -3,7 +3,7 @@ resource "google_compute_firewall" "http-allow" {
   network     = google_compute_network.vpc.name
   allow {
     protocol = "tcp"
-    ports    = ["9092", "9093"]
+    ports    = ["9092", "9093", "9094"]
   }
   source_ranges = ["0.0.0.0/0"] # open to the world
   target_tags   = ["http-server"]
@@ -30,6 +30,8 @@ locals {
         {name = "KAFKA_CFG_CONTROLLER_QUORUM_VOTERS", value = "0@localhost:9093"},
         {name = "KAFKA_CFG_CONTROLLER_LISTENER_NAMES", value = "CONTROLLER"},
         {name = "KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE", value = "true"},
+        {name = "BITNAMI_DEBUG", value = "true"},
+        # {name = "KAFKA_KRAFT_CLUSTER_ID", value = "Yjc0M2RmODFkMTVjNGRiYz"}, # force restart the container with a new value
     ]
 
     env_sha = sha1("${join("", local.env.*.value)}")
@@ -41,7 +43,7 @@ module "gce-container" {
   cos_image_name = "cos-stable-77-12371-89-0"
 
   container = {
-    image = "bitnami/kafka:latest"
+    image = "bitnami/kafka@sha256:4cabaff3ab15330be42d86fd8521a963f20cf9d8003e2bc9f9b57e636c983dbe"
 
     env = local.env
     volumeMounts = [
@@ -69,8 +71,9 @@ module "gce-container" {
 resource "google_compute_instance" "vm" {
   project      = var.project
   name         = "${var.app_name}-vm"
-  machine_type = "n1-standard-1"
+  machine_type = "n2-standard-2"
   zone         = var.zone
+  allow_stopping_for_update = true
 
   boot_disk {
     initialize_params {
