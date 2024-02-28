@@ -5,7 +5,7 @@ metadata:
   labels:
     app: kfk
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: kfk
@@ -14,6 +14,7 @@ spec:
       labels:
         app: kfk
     spec:
+      containers:
       - name: kfk
         image: us-central1-docker.pkg.dev/sohansm-project/kfk/consumer:latest
         imagePullPolicy: "Always"
@@ -29,8 +30,8 @@ spec:
         - name: DELAY_IN_SECONDS
           value: "0.25"
         livenessProbe:
-            exec:
-              command:
-              - date
-            initialDelaySeconds: 10
-            periodSeconds: 10
+          exec:
+            command:
+            - date
+          initialDelaySeconds: 10
+          periodSeconds: 10

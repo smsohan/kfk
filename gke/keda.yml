@@ -1,0 +1,23 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: kafka-scaledobject
+  namespace: default
+spec:
+  scaleTargetRef:
+    name: kfk-deployment
+  pollingInterval: 30
+  triggers:
+  - type: kafka
+    metadata:
+      bootstrapServers: "10.10.0.2:9094"
+      consumerGroup: "consumer-group"
+      topic: gke-test-topic-2
+      lagThreshold: '10'
+      activationLagThreshold: '3'
+      offsetResetPolicy: latest
+      allowIdleConsumers: "false"
+      scaleToZeroOnInvalidOffset: "false"
+      excludePersistentLag: "false"
+      limitToPartitionsWithLag: "false"
+      tls: disable
