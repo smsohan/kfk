@@ -9,9 +9,10 @@ KAFKA_CONSUMER_CONFIG = KAFKA_CONFIG.merge(:"group.id" => "consumer-group",
 KAFKA_CONSUMER = Rdkafka::Config.new(KAFKA_CONSUMER_CONFIG)
 
 if ENV['APP_ENV'] == 'development'
+  partition_count = [ ENV['KAFKA_PARTITION_COUNT'].to_i, 1].max
   begin
     puts "Creating topic in case it doesn't exist #{ENV['KAFKA_TOPIC']}"
-    KAFKA_CONSUMER.admin.create_topic(ENV['KAFKA_TOPIC'], 1, 1)
+    KAFKA_CONSUMER.admin.create_topic(ENV['KAFKA_TOPIC'], partition_count, 1)
   rescue => exception
     puts "Failed to create topic. Continuing. #{exception.message}"
   end

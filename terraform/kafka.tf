@@ -106,6 +106,8 @@ resource "google_compute_instance" "vm" {
     ]
   }
 
+  depends_on = [ google_compute_firewall.ssh-allow, google_compute_firewall.http-allow  ]
+
 }
 
 # hack to restart the container when the env changes

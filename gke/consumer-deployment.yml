@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kfk-deployment
+  labels:
+    app: kfk
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kfk
+  template:
+    metadata:
+      labels:
+        app: kfk
+    spec:
+      - name: kfk
+        image: us-central1-docker.pkg.dev/sohansm-project/kfk/consumer:latest
+        imagePullPolicy: "Always"
+        env:
+        - name: APP_ENV
+          value: development
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "10.10.0.2:9094"
+        - name: KAFKA_TOPIC
+          value: gke-test-topic-2
+        - name: KAFKA_PARTITION_COUNT
+          value: "10"
+        - name: DELAY_IN_SECONDS
+          value: "0.25"
+        livenessProbe:
+            exec:
+              command:
+              - date
+            initialDelaySeconds: 10
+            periodSeconds: 10
